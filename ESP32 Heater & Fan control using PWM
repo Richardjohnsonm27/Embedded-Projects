@@ -14,7 +14,7 @@ enum buttonstatus mode;
 
 void setup(){
   pinMode(25,INPUT);   //push button
-  pinMode(26,INPUT); //ntc volt divider
+  pinMode(26,INPUT);  //ntc volt divider
   pinMode(34,INPUT);  //10k pot
   pinMode(18,OUTPUT); //Fan mosfet
   pinMode(19,OUTPUT); //heater mosfet
