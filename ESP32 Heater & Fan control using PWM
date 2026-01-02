@@ -1,0 +1,102 @@
+#include<wire.h>
+#include<LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27,16,2);
+uint32_t now=0;
+uint8_t pressed=0;
+uint8_t pot=0;
+uint8_t duty=0;
+
+enum buttonstatus{
+  heater,
+  fan
+};
+enum buttonstatus mode;
+
+void setup(){
+  pinMode(25,INPUT);   //push button
+  pinMode(26,INPUT); //ntc volt divider
+  pinMode(34,INPUT);  //10k pot
+  pinMode(18,OUTPUT); //Fan mosfet
+  pinMode(19,OUTPUT); //heater mosfet
+
+  ledcSetup(0,6000,8);
+  ledcAttachPin(18,0);
+  ledcSetup(1,8000,8);
+  ledcAttachPin(19,1);
+
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+
+  mode=heater;
+
+  now=millis();
+}
+void loop(){
+  
+  if(digitalRead(25)==1){
+    if(millis()-now >=2000){
+      pressed=1;
+    }
+  }else{
+    now=millis();
+  }
+  
+  if(pressed){
+    
+   switch(mode){
+     
+    case heater :
+      pot=analogRead(34);
+      duty=map(pot,0,4095,0,255);
+      display(duty);
+      ledcWrite(1,duty);
+      if(digitalRead(25)==1){
+        if(millis()-now>=2000){
+          pressed=0;
+          now=millis();
+          break;
+        } else {
+          mode=fan;
+          now=millis();
+          break;
+        }
+      }
+    case fan :
+      pot=analogRead(34);
+      duty=map(pot,0,4095,0,255);
+      display(duty);
+      ledcWrite(0,duty);
+      if(digitalRead(25)==1){
+        now=millis();
+        if(millis()-now>=2000){
+          pressed=0;
+          now=millis();
+          break;
+        } else {
+          mode=heater;
+          now=millis();
+          break;
+        }
+    }
+  }
+ }
+} 
+
+void display(uint8_t duty){
+  lcd.setCursor(2,0);
+  lcd.print("H");
+  lcd.setCursor(2,1);
+  lcd.print(map(duty,0,255,0,100));
+
+  lcd.setCursor(6,0);
+  lcd.print("F");
+  lcd.setCursor(6,1);
+  lcd.print(map(duty,0,255,0,100));
+
+  lcd.setCursor(11,0);
+  lcd.print("TEMP");
+  lcd.setCursor(11,1);
+  lcd.print(analogRead(26));
+  
+}
